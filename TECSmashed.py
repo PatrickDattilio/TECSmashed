@@ -46,7 +46,7 @@ def send_cmd(cmd):
     last_cmd = cmd
     time.sleep(random.randrange(567, 2209) / 1000.0)
     print(cmd)
-    TEC.send_cmd(pycwnd, cmd)
+    TEC.send_input(pycwnd, cmd)
 
 
 def add_action(action):
