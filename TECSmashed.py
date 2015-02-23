@@ -197,7 +197,7 @@ def handle_recover(wait):
 
 def handle_trap(line):
     global free
-    if "but nothing is trapped inside" in line:
+    if "but nothing is trapped inside" in line or "rendering it useless" in line:
         print("Dismantle snare")
         add_action((9, Action.dismantle_trap))
         free = True
@@ -212,10 +212,10 @@ def handle_trap(line):
 
 
 def handle_line(line):
-    global action_status, last_cmd, last_direction, free, corpse, get_parts
+    global action_status, last_cmd, last_direction, free, corpse, current_action
     if line[0] == "[":
         handle_action(line)
-    elif "retreat" in line and "You retreat." not in line:
+    elif "retreat" in line and "You retreat." not in line and "retreat first" not in line and "retreats." not in line:
         add_action((999, Action.retreat))
     elif "You fumble!" in line:
         handle_recover(True)
@@ -262,6 +262,9 @@ def handle_line(line):
         handle_set_trap()
     elif "The ground is too soft and loose to dig" in line:
         move_last_direction()
+        current_action = (0, Action.nothing)
+        free = True
+        time.sleep(random.randrange(1234, 2512) / 1000)
         handle_set_trap()
         perform_action()
     elif "You are in the middle of something." in line or "You will be busy for" in line:
