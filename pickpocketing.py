@@ -1,8 +1,10 @@
 from threading import Timer
+
 from Action import Action
 
 
 class pickpocketing:
+    global running
 
     def __init__(self, tec):
         self.tec = tec
@@ -27,11 +29,24 @@ class pickpocketing:
             print("QueueD: " + str(self.queue))
 
     def send_cmd(self, cmd):
+        print("Sending: " + cmd)
         self.last_command = cmd
         self.tec.send_cmd(cmd)
 
+
+    def palm_timeout(self):
+        print("Timeout")
+        self.add_action(Action.repeat)
+        self.free = True
+        self.perform_action()
+
+    def retry(self):
+        print("Retying command: " + self.last_command)
+        self.send_cmd(self.last_command)
+
+
     def handle_pickpocket_line(self, line):
-        print("Pickpocket line: "+line)
+        print("Pickpocket line: " + line)
         if line.strip() == "You are no longer busy.":
             print("P: Not Busy")
             self.free = True
@@ -48,18 +63,13 @@ class pickpocketing:
         elif "[Success:" in line:
             self.timer.cancel()
             roll = self.tec.rollPattern.search(line)
-            #Successsful action
+            # Successsful action
             if int(roll.group(1)) < int(roll.group(2)):
                 self.add_action(Action.unpalm)
             else:
                 self.add_action(Action.palm)
         elif "You drop a" in line:
             self.add_action(Action.get_den)
-
-
-    def palm_timeout(self):
-        self.add_action(Action.repeat)
-        self.perform_action()
 
     def perform_action(self):
         if self.free and len(self.queue) > 0:
@@ -76,6 +86,6 @@ class pickpocketing:
                 self.send_cmd("get den")
                 self.perform_action()
             elif self.action == Action.repeat:
-                self.send_command(self.last_command)
+                self.retry()
 
 
