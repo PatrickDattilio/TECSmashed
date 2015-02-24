@@ -3,15 +3,13 @@ import win32ui
 import time
 
 import win32con
-
-
 def f_click(pycwnd):
     x = 167
     y = 844
 
 
-def get_whndl():
-    whndl = win32gui.FindWindowEx(0, 0, None, 'TEC - Mozilla Firefox')
+def get_whndl(window_name):
+    whndl = win32gui.FindWindowEx(0, 0, None, window_name)
     return whndl
 
 
