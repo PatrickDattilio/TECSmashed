@@ -10,6 +10,7 @@ class pickpocketing:
         self.queue = []
         self.action = Action.nothing
         self.timer = Timer(3.0, self.perform_action())
+        self.last_command = ""
 
 
     def add_action(self, action):
@@ -24,6 +25,10 @@ class pickpocketing:
             self.queue.remove(action)
             self.queue.sort()
             print("QueueD: " + str(self.queue))
+
+    def send_cmd(self, cmd):
+        self.last_command = cmd
+        self.tec.send_cmd(cmd)
 
     def handle_pickpocket_line(self, line):
         print("Pickpocket line: "+line)
@@ -52,20 +57,25 @@ class pickpocketing:
             self.add_action(Action.get_den)
 
 
+    def palm_timeout(self):
+        self.add_action(Action.repeat)
+        self.perform_action()
 
     def perform_action(self):
         if self.free and len(self.queue) > 0:
             self.action = self.queue.pop()
             if self.action == Action.palm:
                 self.free = False
-                self.tec.send_cmd("p")
-                self.timer = Timer(3.0, self.perform_action)
+                self.send_cmd("p")
+                self.timer = Timer(3.0, self.palm_timeout)
                 self.timer.start()
             elif self.action == Action.unpalm:
-                self.tec.send_cmd("o")
+                self.send_cmd("o")
                 self.perform_action()
             elif self.action == Action.get_den:
-                self.tec.send_cmd("get den")
+                self.send_cmd("get den")
                 self.perform_action()
+            elif self.action == Action.repeat:
+                self.send_command(self.last_command)
 
 
