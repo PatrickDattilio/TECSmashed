@@ -4,7 +4,6 @@ from enum import IntEnum
 class Action(IntEnum):
     nothing = 0
     #attack = 1
-    recover = 2
     #wield = 3
     skin = 4
     #kill = 5
@@ -38,3 +37,4 @@ class Action(IntEnum):
     wield = 53
     get_weapon = 54
     retreat = 55
+    recover = 56
