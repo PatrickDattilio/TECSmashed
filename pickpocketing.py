@@ -13,6 +13,7 @@ class pickpocketing:
         self.action = Action.nothing
         self.timer = Timer(3.0, self.perform_action())
         self.last_command = ""
+        self.palming = True;
 
 
     def add_action(self, action):
@@ -46,7 +47,6 @@ class pickpocketing:
 
 
     def handle_pickpocket_line(self, line):
-        print("Pickpocket line: " + line)
         if line.strip() == "You are no longer busy.":
             print("P: Not Busy")
             self.free = True
@@ -57,6 +57,7 @@ class pickpocketing:
             self.add_action(Action.unpalm)
             self.perform_action()
         elif "You flip your wrist, and cause a silver denar to reappear in your hand." in line:
+            print("P:Flip")
             self.free = True
             self.add_action(Action.palm)
             self.perform_action()
@@ -65,11 +66,14 @@ class pickpocketing:
             roll = self.tec.rollPattern.search(line)
             # Successsful action
             if int(roll.group(1)) < int(roll.group(2)):
-                self.add_action(Action.unpalm)
+                if self.palming:
+                    self.add_action(Action.unpalm)
             else:
-                self.add_action(Action.palm)
+                if self.palming:
+                    self.add_action(Action.palm)
         elif "You drop a" in line:
             self.add_action(Action.get_den)
+            self.add_action(Action.palm)
 
     def perform_action(self):
         if self.free and len(self.queue) > 0:

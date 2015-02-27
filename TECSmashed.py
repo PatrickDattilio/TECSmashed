@@ -2,8 +2,8 @@ import time
 import re
 import random
 import sys
-from Action import Action
 
+from Action import Action
 import Combat
 import TECHandler
 from pickpocketing import pickpocketing
@@ -31,7 +31,7 @@ class TECSmashed:
         self.last_direction = "n"
         self.last_cmd = ""
         self.corpse = 1
-        self.next_action = []
+        self.queue = []
         self.current_action = Action.nothing
 
         loglines = TECHandler.follow(logfile)
@@ -41,23 +41,28 @@ class TECSmashed:
 
     def send_cmd(self, cmd):
         self.last_cmd = cmd
-        time.sleep(random.randrange(567, 2209) / 1000.0)
+        time.sleep(random.randrange(567, 4209) / 1000.0)
         print(cmd)
         self.TECH.send_input(self.pycwnd, cmd)
+        #randomly double send
+        if random.randrange(1,15) == 1:
+            time.sleep(random.randrange(567, 1209) / 1000.0)
+            self.TECH.send_input(self.pycwnd, cmd)
+
 
 
     def add_action(self, action):
-        if action not in self.next_action:
-            self.next_action.append(action)
-            self.next_action.sort()
-            print("Add: " + str(self.next_action))
+        if action not in self.queue:
+            self.queue.append(action)
+            self.queue.sort()
+            print("Add: " + str(self.queue))
 
 
     def remove_action(self, action):
-        if action in self.next_action:
-            self.next_action.remove(action)
-            self.next_action.sort()
-            print("Remove: " + str(self.next_action))
+        if action in self.queue:
+            self.queue.remove(action)
+            self.queue.sort()
+            print("Remove: " + str(self.queue))
 
 
     # Repeats until we run out of corpses.
@@ -66,14 +71,12 @@ class TECSmashed:
         self.send_cmd(cmd)
         self.add_action(Action.skin)
 
-
     def move_last_direction(self):
         self.send_cmd(self.last_direction)
 
-
     def set_trap(self):
         # If the last action
-        if self.action_status and self.current_action == (4, Action.set_trap):
+        if self.action_status and self.current_action == Action.set_trap:
             self.move_last_direction()
             time.sleep(random.randrange(1234, 2512) / 1000)
             self.action_status = False
@@ -101,8 +104,8 @@ class TECSmashed:
 
     def perform_action(self):
         # get the last item in the list/highest priority
-        if self.free and len(self.next_action) > 0:
-            self.current_action = self.next_action.pop()
+        if self.free and len(self.queue) > 0:
+            self.current_action = self.queue.pop()
             print(self.current_action)
             if self.current_action == Action.skin:
                 self.free = False
@@ -125,7 +128,7 @@ class TECSmashed:
             elif self.current_action == Action.release_trap:
                 self.release_trap()
             elif self.current_action == Action.repeat:
-                if Action.attack not in self.next_action:
+                if Action.attack not in self.queue:
                     self.send_cmd(self.last_cmd)
             elif self.current_action == Action.get_parts:
                 self.free = False
@@ -133,13 +136,13 @@ class TECSmashed:
 
 
     # def handle_action(self, line):
-    #     me = True
-    #     if "] A" in line or "] An" in line:
-    #         self.add_action(Action.attack)
-    #         me = False
-    #         if self.free:
-    #             print("Free, starting attack")
-    #             self.perform_action()
+    # me = True
+    # if "] A" in line or "] An" in line:
+    # self.add_action(Action.attack)
+    # me = False
+    # if self.free:
+    # print("Free, starting attack")
+    # self.perform_action()
     #     elif "You slit" in line:
     #         print("Killed")
     #         self.add_action(Action.skin)
@@ -149,17 +152,15 @@ class TECSmashed:
 
 
     def handle_set_trap(self):
-        action = (4, Action.set_trap)
-        if self.current_action != Action.set_trap and action not in self.next_action:
+        action = Action.set_trap
+        if self.current_action != Action.set_trap and action not in self.queue:
             self.add_action(action)
-
-
-
 
 
     def handle_trap(self, line):
         if "but nothing is trapped inside" in line or "rendering it useless" in line:
             print("Dismantle snare")
+            self.add_action(Action.set_trap)
             self.add_action(Action.dismantle_trap)
             self.free = True
             self.perform_action()
@@ -180,20 +181,16 @@ class TECSmashed:
             self.combat.handle_combat_line(line)
         elif self.palming:
             self.pickpocketing.handle_pickpocket_line(line)
+        # elif self.hunting:
+        #     self.hunting_lore.handle_hunting_line(line)
         elif "] A" in line or "] An" in line:
+            print("Combat")
             self.in_combat = True
-        elif "palm den" in line:
+        elif "p" == line or "o" == line or "m"== line:
+            print("Pickpocketing")
             self.palming = True
         elif "retreat" in line and "You retreat." not in line and "retreat first" not in line and "retreats." not in line:
             self.add_action(Action.retreat)
-        # elif "You fumble!" in line:
-        #     self.handle_recover(True)
-        # elif "You must be wielding a weapon to attack." in line or "You can't do that right now." in line:
-        #     self.handle_recover(False)
-        # elif "falls unconscious" in line:
-        #     print("Unconscious")
-        #     self.remove_action(Action.attack)
-        #     self.add_action(Action.kill)
         elif "There isn't anything worth skinning on it" in line or "You can only skin corpses." in line:
             self.corpse += 1
             print("Corpse: " + str(self.corpse))
@@ -202,19 +199,11 @@ class TECSmashed:
         elif "skin corpse" in line:
             self.add_action(Action.skin)
             print("Skinning")
-        # elif "expires." in line:
-        #     self.remove_action(Action.kill)
-        #     self.add_action(Action.skin)
-        #     print("Dead")
-        #     self.free = True
         elif "There aren't that many here." in line:
             print("Stop Skinning")
             self.remove_action(Action.skin)
             if self.corpse > 2:
                 self.add_action(Action.group_corp)
-            self.add_action(Action.get_parts)
-            self.add_action(Action.group_value)
-            # self.add_action((7, Action.group_junk))
             self.corpse = 1
             self.free = True
             self.perform_action()
@@ -237,7 +226,7 @@ class TECSmashed:
             time.sleep(random.randrange(1234, 2512) / 1000)
             self.handle_set_trap()
             self.perform_action()
-        elif "You are in the middle of something." in line or "You will be busy for" in line:
+        elif "You are in the middle of something." in line: # or "You will be busy for" in line:
             print("Repeating: " + self.last_cmd)
             self.add_action(Action.repeat)
             self.free = True
@@ -254,7 +243,7 @@ class TECSmashed:
             self.add_action(Action.look_trap)
             self.perform_action()
         elif "sstat" in line:
-            print(self.next_action)
+            print(self.queue)
             print(self.last_direction)
 
 

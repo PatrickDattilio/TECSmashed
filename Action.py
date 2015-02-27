@@ -24,6 +24,8 @@ class Action(IntEnum):
     # wield = 53
     # get_weapon = 54
     # retreat = 55
+    ###
+
 
     ##### Pickpocketing aciongs
     palm = 40
@@ -34,7 +36,8 @@ class Action(IntEnum):
     combat_skin = 50
     attack = 51
     kill = 52
-    wield = 53
-    get_weapon = 54
-    retreat = 55
-    recover = 56
+    release = 53
+    wield = 54
+    get_weapon = 55
+    retreat = 56
+    recover = 57
