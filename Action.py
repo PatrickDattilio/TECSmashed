@@ -3,10 +3,7 @@ from enum import IntEnum
 
 class Action(IntEnum):
     nothing = 0
-    #attack = 1
-    #wield = 3
     skin = 4
-    #kill = 5
     group_corp = 6
     group_junk = 7
     group_value = 8
@@ -16,14 +13,8 @@ class Action(IntEnum):
     repeat = 1000
     look_trap = 13
     release_trap = 14
-    #retreat = 999
     get_parts = 16
-    # combat_skin = 50
-    # attack = 51
-    # kill = 52
-    # wield = 53
-    # get_weapon = 54
-    # retreat = 55
+    cast_pole = 17
     ###
 
 

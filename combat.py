@@ -7,7 +7,7 @@ from Action import Action
 
 class HuntingGround(IntEnum):
     Island = 0
-    Sewers = 1
+    Sewers = 0
 
 
 # todo Combat Skin
@@ -16,7 +16,6 @@ class combat:
         self.tec = tec
         self.rotation = [['zzh', 'zxh', 'zch', 'zvh', 'zbh', 'znh', 'zmh', 'za', 'zsh'],
                          ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'za', 'zs']]
-        self.free = True
         self.retreat = False
         self.hunting_ground = HuntingGround.Sewers
 
@@ -45,18 +44,18 @@ class combat:
         pass
 
     def perform_action(self):
-        if self.free and len(self.tec.queue) > 0:
+        if self.tec.free and len(self.tec.queue) > 0:
             self.action = self.tec.queue.pop()
             if self.action == Action.recover:
                 self.recover()
             elif self.action == Action.retreat:
-                self.free = False
+                self.tec.free = False
             elif self.action == Action.kill:
-                self.free = False
+                self.tec.free = False
                 self.tec.add_action(Action.kill)
                 self.tec.send_cmd("kl")
             elif self.action == Action.attack:
-                self.free = False
+                self.tec.free = False
                 self.attack()
             elif self.action == Action.release:
                 self.tec.send_cmd("release")
@@ -65,11 +64,15 @@ class combat:
     # We are in combat
     def handle_combat_line(self, line):
         me = True
-        if "[" in line:
+        if "You are no longer busy." in line:
+            print("Not Busy")
+            self.tec.free = True
+            self.perform_action()
+        elif "[" in line:
             if "] A" in line or "] An" in line:
                 self.tec.add_action(Action.attack)
                 me = False
-                if self.free:
+                if self.tec.free:
                     print("Free, attacking")
                     self.perform_action()
             elif "You slit" in line:
@@ -81,7 +84,7 @@ class combat:
             if me:
                 self.action_status = int(roll.group(1)) < int(roll.group(2))
 
-        if "expires." in line:
+        elif "expires." in line:
             self.tec.remove_action(Action.kill)
             self.tec.add_action(Action.skin)
             print("Dead")
@@ -90,9 +93,6 @@ class combat:
             print("Unconscious")
             self.tec.remove_action(Action.attack)
             self.tec.add_action(Action.kill)
-        elif line.strip() == "You are no longer busy.":
-            self.free = True
-            self.perform_action()
         elif "You fumble!" in line:
             self.handle_recover(False)
         elif "You must be wielding a weapon to attack." in line or "You can't do that right now." in line:

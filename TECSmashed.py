@@ -1,10 +1,10 @@
+import os
 import time
-import re
 import random
-import sys
+from tkinter import *
 
 from Action import Action
-import Combat
+import combat
 import TECHandler
 from pickpocketing import pickpocketing
 
@@ -15,8 +15,9 @@ class TECSmashed:
         self.TECH = TECHandler
         window = self.TECH.get_whndl(windowname)
         self.pycwnd = self.TECH.make_pycwnd(window)
-        logfile = open(filename, "r")
-        self.combat = Combat.combat(self)
+        self.filename = filename
+        self.file = open(self.filename, "r")
+        self.combat = combat.combat(self)
         self.pickpocketing = pickpocketing(self)
         self.directions = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']
         self.rotation = ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'za', 'zs']
@@ -27,28 +28,53 @@ class TECSmashed:
         self.action_status = False
         self.in_combat = False
         self.palming = False
+        self.paused = False
 
         self.last_direction = "n"
         self.last_cmd = ""
         self.corpse = 1
         self.queue = []
         self.current_action = Action.nothing
+        self.data = self.file.read()
+        self.size = len(self.data)
+        self.top = Tk()
+        self.poll()
+        self.pause_button = Button(self.top, text="Pause", command=self.toggle_pause)
+        self.reset_button = Button(self.top, text="Reset Queue", command=self.reset_queue)
+        self.reset_button.pack()
+        self.pause_button.pack()
+        self.top.mainloop()
 
-        loglines = TECHandler.follow(logfile)
-        for newLine in loglines:
-            self.match_line(newLine)
+    def toggle_pause(self):
+        self.paused = not self.paused
+        self.pause_button["text"] = "Run" if self.paused else "Pause"
 
+    def reset_queue(self):
+        self.queue = []
+
+    def poll(self):
+        if os.path.getsize(self.filename) > self.size:
+            line = self.file.read()
+            self.size += len(line)
+            if not self.paused:
+                self.match_line(line)
+        self.top.after(100, self.poll)
+
+    def parse_line(self, file, top):
+        line = TECHandler.get_line(file)
+        print(line)
+        self.match_line(line)
+        top.after(100, self.parse_line, file, top)
 
     def send_cmd(self, cmd):
         self.last_cmd = cmd
         time.sleep(random.randrange(567, 4209) / 1000.0)
         print(cmd)
         self.TECH.send_input(self.pycwnd, cmd)
-        #randomly double send
-        if random.randrange(1,15) == 1:
+        # randomly double send
+        if random.randrange(1, 15) == 1:
             time.sleep(random.randrange(567, 1209) / 1000.0)
             self.TECH.send_input(self.pycwnd, cmd)
-
 
 
     def add_action(self, action):
@@ -89,7 +115,7 @@ class TECSmashed:
 
     def look_trap(self):
         self.send_cmd("l snare")
-
+        self.free = True
 
     def release_trap(self):
         self.send_cmd("release snare")
@@ -127,6 +153,10 @@ class TECSmashed:
                 self.dismantle_trap()
             elif self.current_action == Action.release_trap:
                 self.release_trap()
+            elif self.current_action == Action.cast_pole:
+                self.free = False
+                self.add_action(Action.cast_pole)
+                self.send_cmd("cast pole")
             elif self.current_action == Action.repeat:
                 if Action.attack not in self.queue:
                     self.send_cmd(self.last_cmd)
@@ -143,12 +173,12 @@ class TECSmashed:
     # if self.free:
     # print("Free, starting attack")
     # self.perform_action()
-    #     elif "You slit" in line:
-    #         print("Killed")
-    #         self.add_action(Action.skin)
-    #     roll = self.rollPattern.search(line)
-    #     if me:
-    #         self.action_status = int(roll.group(1)) < int(roll.group(2))
+    # elif "You slit" in line:
+    # print("Killed")
+    # self.add_action(Action.skin)
+    # roll = self.rollPattern.search(line)
+    # if me:
+    # self.action_status = int(roll.group(1)) < int(roll.group(2))
 
 
     def handle_set_trap(self):
@@ -176,20 +206,25 @@ class TECSmashed:
 
 
     def match_line(self, line):
-
-        if self.in_combat:
+        if "You are no longer busy" in line:
+            print("Not Busy")
+            self.free = True
+            self.perform_action()
+        elif self.in_combat:
             self.combat.handle_combat_line(line)
         elif self.palming:
             self.pickpocketing.handle_pickpocket_line(line)
         # elif self.hunting:
         #     self.hunting_lore.handle_hunting_line(line)
-        elif "] A" in line or "] An" in line:
+        elif ( "] A" in line or "] An" in line) and "You retrieve the line" not in line:
             print("Combat")
+            print(line)
             self.in_combat = True
-        elif "p" == line or "o" == line or "m"== line:
+        elif "p" == line or "o" == line or "m" == line:
             print("Pickpocketing")
             self.palming = True
         elif "retreat" in line and "You retreat." not in line and "retreat first" not in line and "retreats." not in line:
+            print("Retreating")
             self.add_action(Action.retreat)
         elif "There isn't anything worth skinning on it" in line or "You can only skin corpses." in line:
             self.corpse += 1
@@ -197,8 +232,8 @@ class TECSmashed:
             self.free = True
             self.perform_action()
         elif "skin corpse" in line:
-            self.add_action(Action.skin)
             print("Skinning")
+            self.add_action(Action.skin)
         elif "There aren't that many here." in line:
             print("Stop Skinning")
             self.remove_action(Action.skin)
@@ -209,12 +244,9 @@ class TECSmashed:
             self.perform_action()
         elif "You are already carrying an" in line and "animal parts" in line:
             self.free = True
-        elif line.strip() == "You are no longer busy.":
-            print("Not Busy")
-            self.free = True
-            self.perform_action()
         elif line.strip() in self.directions:
             self.last_direction = line.strip()
+            print("Changing directions")
             self.free = True
         elif "sd" == line:
             print("Starting trapping")
@@ -226,7 +258,7 @@ class TECSmashed:
             time.sleep(random.randrange(1234, 2512) / 1000)
             self.handle_set_trap()
             self.perform_action()
-        elif "You are in the middle of something." in line: # or "You will be busy for" in line:
+        elif "You are in the middle of something." in line:  # or "You will be busy for" in line:
             print("Repeating: " + self.last_cmd)
             self.add_action(Action.repeat)
             self.free = True
@@ -242,8 +274,11 @@ class TECSmashed:
             self.free = True
             self.add_action(Action.look_trap)
             self.perform_action()
+        elif "cast pole" in line:
+            self.add_action(Action.cast_pole)
         elif "sstat" in line:
             print(self.queue)
+            print("Free: " + self.free)
             print(self.last_direction)
 
 

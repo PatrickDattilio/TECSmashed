@@ -35,13 +35,3 @@ def callback(hwnd, hwnds):
     if win32gui.IsWindowVisible(hwnd) and win32gui.IsWindowEnabled(hwnd):
         hwnds[win32gui.GetClassName(hwnd)] = hwnd
     return True
-
-
-def follow(file):
-    file.seek(0, 2)
-    while True:
-        line = file.readline()
-        if not line:
-            time.sleep(0.1)
-            continue
-        yield line
