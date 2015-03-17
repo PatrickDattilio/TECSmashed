@@ -7,10 +7,8 @@ from Action import Action
 
 class HuntingGround(IntEnum):
     Island = 0
-    Sewers = 0
+    Sewers = 1
 
-
-# todo Combat Skin
 class combat:
     def __init__(self, tec):
         self.tec = tec
@@ -46,6 +44,7 @@ class combat:
     def perform_action(self):
         if self.tec.free and len(self.tec.queue) > 0:
             self.action = self.tec.queue.pop()
+            print("CAction: "+ str(self.action))
             if self.action == Action.recover:
                 self.recover()
             elif self.action == Action.retreat:
@@ -59,7 +58,8 @@ class combat:
                 self.attack()
             elif self.action == Action.release:
                 self.tec.send_cmd("release")
-                pass
+            else:
+                self.tec.perform_action()
 
     # We are in combat
     def handle_combat_line(self, line):
@@ -68,6 +68,28 @@ class combat:
             print("Not Busy")
             self.tec.free = True
             self.perform_action()
+        elif "expires." in line:
+            self.tec.remove_action(Action.kill)
+            self.tec.add_action(Action.combat_skin)
+            print("Dead")
+            self.tec.in_combat = False
+        elif "falls unconscious" in line:
+            print("Unconscious")
+            self.tec.remove_action(Action.attack)
+            self.tec.add_action(Action.kill)
+            if self.tec.free:
+                self.perform_action()
+        elif "You fumble!" in line:
+            self.handle_recover(False)
+        elif "You must be wielding a weapon to attack." in line or "You can't do that right now." in line:
+            self.handle_recover(True)
+        elif "clamped onto you" in line:
+            self.tec.add_action(Action.release)
+        elif "You manage to break free!" in line:
+            self.tec.remove_action(Action.release)
+        elif "must be unconscious first" in line:
+            self.tec.remove_action(Action.kill)
+            self.tec.free = True
         elif "[" in line:
             if "] A" in line or "] An" in line:
                 self.tec.add_action(Action.attack)
@@ -78,26 +100,8 @@ class combat:
             elif "You slit" in line:
                 print("Killed")
                 self.tec.remove_action(Action.kill)
-                self.tec.add_action(Action.skin)
+                self.tec.add_action(Action.combat_skin)
                 self.tec.in_combat = False
             roll = self.tec.rollPattern.search(line)
             if me:
                 self.action_status = int(roll.group(1)) < int(roll.group(2))
-
-        elif "expires." in line:
-            self.tec.remove_action(Action.kill)
-            self.tec.add_action(Action.skin)
-            print("Dead")
-            self.tec.in_combat = False
-        elif "falls unconscious" in line:
-            print("Unconscious")
-            self.tec.remove_action(Action.attack)
-            self.tec.add_action(Action.kill)
-        elif "You fumble!" in line:
-            self.handle_recover(False)
-        elif "You must be wielding a weapon to attack." in line or "You can't do that right now." in line:
-            self.handle_recover(True)
-        elif "clamped onto you" in line:
-            self.tec.add_action(Action.release)
-        elif "You manage to break free!" in line:
-            self.tec.remove_action(Action.release)

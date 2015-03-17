@@ -17,6 +17,9 @@ class Action(IntEnum):
     cast_pole = 17
     ###
 
+    ##### Outdoor Basics
+    find_firewood = 30
+    make_torch = 31
 
     ##### Pickpocketing aciongs
     palm = 40
@@ -24,8 +27,8 @@ class Action(IntEnum):
     get_den = 42
 
     ###### Combat actions
-    combat_skin = 50
-    attack = 51
+    attack = 50
+    combat_skin = 51
     kill = 52
     release = 53
     wield = 54

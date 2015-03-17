@@ -1,3 +1,4 @@
+import threading
 import os
 import time
 import random
@@ -6,6 +7,7 @@ from tkinter import *
 from Action import Action
 import combat
 import TECHandler
+from outdoor_basics import outdoor_basics
 from pickpocketing import pickpocketing
 
 
@@ -19,6 +21,7 @@ class TECSmashed:
         self.file = open(self.filename, "r")
         self.combat = combat.combat(self)
         self.pickpocketing = pickpocketing(self)
+        self.outdoor_basics = outdoor_basics(self)
         self.directions = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']
         self.rotation = ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'za', 'zs']
         # rotation = ['zzh', 'zxh', 'zch', 'zvh', 'zbh', 'znh', 'zmh', 'za', 'zsh']
@@ -28,6 +31,7 @@ class TECSmashed:
         self.action_status = False
         self.in_combat = False
         self.palming = False
+        self.outdoor = False
         self.paused = False
 
         self.last_direction = "n"
@@ -39,14 +43,16 @@ class TECSmashed:
         self.size = len(self.data)
         self.top = Tk()
         self.poll()
-        self.pause_button = Button(self.top, text="Pause", command=self.toggle_pause)
-        self.reset_button = Button(self.top, text="Reset Queue", command=self.reset_queue)
+        self.pause_button = Button(self.top, text="Pause", command=self.toggle_pause, padx=10, pady=10)
+        self.reset_button = Button(self.top, text="Reset Queue", command=self.reset_queue, padx=10, pady=10)
         self.reset_button.pack()
         self.pause_button.pack()
+        self.top.lift()
         self.top.mainloop()
 
     def toggle_pause(self):
         self.paused = not self.paused
+        self.free = True
         self.pause_button["text"] = "Run" if self.paused else "Pause"
 
     def reset_queue(self):
@@ -58,15 +64,16 @@ class TECSmashed:
             self.size += len(line)
             if not self.paused:
                 self.match_line(line)
-        self.top.after(100, self.poll)
+        self.top.after(50, self.poll)
 
     def parse_line(self, file, top):
         line = TECHandler.get_line(file)
         print(line)
         self.match_line(line)
-        top.after(100, self.parse_line, file, top)
+        top.after(50, self.parse_line, file, top)
 
-    def send_cmd(self, cmd):
+
+    def start_cmd_thread(self, cmd):
         self.last_cmd = cmd
         time.sleep(random.randrange(567, 4209) / 1000.0)
         print(cmd)
@@ -76,6 +83,10 @@ class TECSmashed:
             time.sleep(random.randrange(567, 1209) / 1000.0)
             self.TECH.send_input(self.pycwnd, cmd)
 
+    def send_cmd(self, cmd):
+        cmdThread = threading.Thread(target=self.start_cmd_thread, args=[cmd])
+        cmdThread.start()
+        cmdThread.join()
 
     def add_action(self, action):
         if action not in self.queue:
@@ -95,7 +106,7 @@ class TECSmashed:
     def skin(self):
         cmd = "skin" + ( " " if self.corpse == 1 else " " + str(self.corpse) + " ") + "corp"
         self.send_cmd(cmd)
-        self.add_action(Action.skin)
+        self.add_action(self.current_action)
 
     def move_last_direction(self):
         self.send_cmd(self.last_direction)
@@ -132,8 +143,8 @@ class TECSmashed:
         # get the last item in the list/highest priority
         if self.free and len(self.queue) > 0:
             self.current_action = self.queue.pop()
-            print(self.current_action)
-            if self.current_action == Action.skin:
+            print("Action: " + str(self.current_action))
+            if self.current_action == Action.skin or self.current_action == Action.combat_skin:
                 self.free = False
                 self.skin()
             elif self.current_action == Action.group_corp:
@@ -183,7 +194,7 @@ class TECSmashed:
 
     def handle_set_trap(self):
         action = Action.set_trap
-        if self.current_action != Action.set_trap and action not in self.queue:
+        if self.current_action != Action.set_trap:
             self.add_action(action)
 
 
@@ -206,16 +217,19 @@ class TECSmashed:
 
 
     def match_line(self, line):
-        if "You are no longer busy" in line:
-            print("Not Busy")
-            self.free = True
-            self.perform_action()
-        elif self.in_combat:
+        print(line)
+        if self.in_combat:
             self.combat.handle_combat_line(line)
         elif self.palming:
             self.pickpocketing.handle_pickpocket_line(line)
+        elif self.outdoor:
+            self.outdoor_basics.handle_outdoor_line(line)
         # elif self.hunting:
-        #     self.hunting_lore.handle_hunting_line(line)
+        # self.hunting_lore.handle_hunting_line(line)
+        elif "You are no longer busy" in line:
+            print("Not Busy")
+            self.free = True
+            self.perform_action()
         elif ( "] A" in line or "] An" in line) and "You retrieve the line" not in line:
             print("Combat")
             print(line)
@@ -223,6 +237,10 @@ class TECSmashed:
         elif "p" == line or "o" == line or "m" == line:
             print("Pickpocketing")
             self.palming = True
+        elif "ff" == line or "mt" == line:
+            print("Outdoor Basics")
+            self.outdoor = True
+            self.outdoor_basics.handle_outdoor_line(line)
         elif "retreat" in line and "You retreat." not in line and "retreat first" not in line and "retreats." not in line:
             print("Retreating")
             self.add_action(Action.retreat)
@@ -234,14 +252,7 @@ class TECSmashed:
         elif "skin corpse" in line:
             print("Skinning")
             self.add_action(Action.skin)
-        elif "There aren't that many here." in line:
-            print("Stop Skinning")
-            self.remove_action(Action.skin)
-            if self.corpse > 2:
-                self.add_action(Action.group_corp)
-            self.corpse = 1
-            self.free = True
-            self.perform_action()
+
         elif "You are already carrying an" in line and "animal parts" in line:
             self.free = True
         elif line.strip() in self.directions:
@@ -274,11 +285,20 @@ class TECSmashed:
             self.free = True
             self.add_action(Action.look_trap)
             self.perform_action()
+        elif "There aren't that many here." in line or "You don't see a" in line:
+            print("Stop Skinning")
+            self.remove_action(Action.skin)
+            self.remove_action(Action.combat_skin)
+            if self.corpse > 2:
+                self.add_action(Action.group_corp)
+            self.corpse = 1
+            self.free = True
+            self.perform_action()
         elif "cast pole" in line:
             self.add_action(Action.cast_pole)
         elif "sstat" in line:
             print(self.queue)
-            print("Free: " + self.free)
+            print("Free: " + str(self.free))
             print(self.last_direction)
 
 

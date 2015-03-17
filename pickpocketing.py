@@ -51,13 +51,17 @@ class pickpocketing:
             print("P: Not Busy")
             self.free = True
             self.perform_action()
+        if "You are in the middle of something." in line:
+            self.add_action(Action.repeat)
+            self.perform_action()
         elif "You are already palming that." in line:
             print("P: Already palming")
             self.free = True
             self.add_action(Action.unpalm)
             self.perform_action()
-        elif "You flip your wrist, and cause a silver denar to reappear in your hand." in line:
+        elif "reappear in your hand." in line or "You aren't palming anything" in line:
             print("P:Flip")
+            self.timer.cancel()
             self.free = True
             self.add_action(Action.palm)
             self.perform_action()
@@ -71,7 +75,7 @@ class pickpocketing:
             else:
                 if self.palming:
                     self.add_action(Action.palm)
-        elif "You drop a" in line:
+        elif "You drop" in line:
             self.add_action(Action.get_den)
             self.add_action(Action.palm)
 
@@ -81,11 +85,13 @@ class pickpocketing:
             if self.action == Action.palm:
                 self.free = False
                 self.send_cmd("p")
-                self.timer = Timer(3.0, self.palm_timeout)
+                self.timer = Timer(5.0, self.palm_timeout)
                 self.timer.start()
             elif self.action == Action.unpalm:
                 self.send_cmd("o")
                 self.perform_action()
+                self.timer = Timer(5.0, self.palm_timeout)
+                self.timer.start()
             elif self.action == Action.get_den:
                 self.send_cmd("get den")
                 self.perform_action()
