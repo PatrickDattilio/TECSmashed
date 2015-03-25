@@ -54,7 +54,6 @@ class TECSmashed:
         self.paused = not self.paused
         self.free = True
         self.pause_button["text"] = "Run" if self.paused else "Pause"
-
     def reset_queue(self):
         self.queue = []
 
@@ -75,7 +74,7 @@ class TECSmashed:
 
     def start_cmd_thread(self, cmd):
         self.last_cmd = cmd
-        time.sleep(random.randrange(567, 4209) / 1000.0)
+        time.sleep(random.randrange(567, 1309) / 1000.0)
         print(cmd)
         self.TECH.send_input(self.pycwnd, cmd)
         # randomly double send
@@ -234,10 +233,10 @@ class TECSmashed:
             print("Combat")
             print(line)
             self.in_combat = True
-        elif "p" == line or "o" == line or "m" == line:
+        elif "p" == line or "o" == line or "m" == line or "spookt" == line or "ect" == line:
             print("Pickpocketing")
             self.palming = True
-        elif "ff" == line or "mt" == line:
+        elif "ff" == line or "mt" == line or "sft" == line:
             print("Outdoor Basics")
             self.outdoor = True
             self.outdoor_basics.handle_outdoor_line(line)

@@ -18,13 +18,16 @@ class Action(IntEnum):
     ###
 
     ##### Outdoor Basics
-    find_firewood = 30
-    make_torch = 31
+    stoke_fire_twig = 30
+    find_firewood = 31
+    make_torch = 32
 
     ##### Pickpocketing aciongs
     palm = 40
     unpalm = 41
     get_den = 42
+    spook = 43
+    ear = 44
 
     ###### Combat actions
     attack = 50

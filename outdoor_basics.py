@@ -14,6 +14,9 @@ class outdoor_basics:
             elif self.action == Action.make_torch:
                 self.tec.add_action(Action.make_torch)
                 self.handle_make_torch()
+            elif self.action == Action.stoke_fire_twig:
+                self.tec.add_action(Action.stoke_fire_twig)
+                self.handle_stoke_fire_twig()
             else:
                 self.tec.perform_action()
 
@@ -23,13 +26,18 @@ class outdoor_basics:
             print("Not Busy")
             self.tec.free = True
             self.perform_action()
-        elif "ff" in line:
+        elif "ff" == line:
             self.tec.add_action(Action.find_firewood)
-        elif "mt" in line:
+        elif "mt" == line:
             self.tec.add_action(Action.make_torch)
+        elif "sft" == line:
+            self.tec.add_action(Action.stoke_fire_twig)
 
     def handle_find_firewood(self):
         self.tec.send_cmd("ff")
 
     def handle_make_torch(self):
         self.tec.send_cmd("mt")
+
+    def handle_stoke_fire_twig(self):
+        self.tec.send_cmd("sft")

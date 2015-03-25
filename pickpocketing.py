@@ -13,8 +13,7 @@ class pickpocketing:
         self.action = Action.nothing
         self.timer = Timer(3.0, self.perform_action())
         self.last_command = ""
-        self.palming = True;
-
+        self.palming = False
 
     def add_action(self, action):
         if action not in self.queue:
@@ -65,6 +64,12 @@ class pickpocketing:
             self.free = True
             self.add_action(Action.palm)
             self.perform_action()
+        elif "spookt" == line:
+            self.add_action(Action.spook)
+        elif "ect" == line:
+            self.add_action(Action.ear)
+        elif "p" == line or "o" == line:
+            self.palming = True
         elif "[Success:" in line:
             self.timer.cancel()
             roll = self.tec.rollPattern.search(line)
@@ -95,6 +100,12 @@ class pickpocketing:
             elif self.action == Action.get_den:
                 self.send_cmd("get den")
                 self.perform_action()
+            elif self.action == Action.spook:
+                self.add_action(Action.spook)
+                self.send_cmd("spookt")
+            elif self.action == Action.ear:
+                self.add_action(Action.ear)
+                self.send_cmd("ect")
             elif self.action == Action.repeat:
                 self.retry()
 
