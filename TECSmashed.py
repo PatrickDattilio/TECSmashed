@@ -7,6 +7,7 @@ from tkinter import *
 from Action import Action
 import combat
 import TECHandler
+from courses import courses
 from outdoor_basics import outdoor_basics
 from pickpocketing import pickpocketing
 
@@ -22,6 +23,7 @@ class TECSmashed:
         self.combat = combat.combat(self)
         self.pickpocketing = pickpocketing(self)
         self.outdoor_basics = outdoor_basics(self)
+        self.courses_mod = courses(self)
         self.directions = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw']
         self.rotation = ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'za', 'zs']
         # rotation = ['zzh', 'zxh', 'zch', 'zvh', 'zbh', 'znh', 'zmh', 'za', 'zsh']
@@ -33,6 +35,8 @@ class TECSmashed:
         self.palming = False
         self.outdoor = False
         self.paused = False
+        self.courses = False
+        self.courses_part_three = False
 
         self.last_direction = "n"
         self.last_cmd = ""
@@ -45,6 +49,10 @@ class TECSmashed:
         self.poll()
         self.pause_button = Button(self.top, text="Pause", command=self.toggle_pause, padx=10, pady=10)
         self.reset_button = Button(self.top, text="Reset Queue", command=self.reset_queue, padx=10, pady=10)
+        self.courses_button = Button(self.top, text="Start Courses", command=self.toggle_courses, padx=10, pady=10)
+        self.course_part_button = Button(self.top, text="4-Part", command=self.toggle_course_part, padx=10, pady=10)
+        self.course_part_button.pack()
+        self.courses_button.pack()
         self.reset_button.pack()
         self.pause_button.pack()
         self.top.lift()
@@ -54,6 +62,17 @@ class TECSmashed:
         self.paused = not self.paused
         self.free = True
         self.pause_button["text"] = "Run" if self.paused else "Pause"
+
+    def toggle_courses(self):
+        self.courses = not self.courses
+        self.free = True
+        self.courses_button["text"] = "Stop Courses" if self.courses else "Courses"
+
+    def toggle_course_part(self):
+        self.course_part_three = not self.course_part_three
+        self.free = True
+        self.courses_button["text"] = "3-part" if self.courses else "4-part"
+
     def reset_queue(self):
         self.queue = []
 
@@ -72,18 +91,20 @@ class TECSmashed:
         top.after(50, self.parse_line, file, top)
 
 
-    def start_cmd_thread(self, cmd):
+    def start_cmd_thread(self, cmd, delay):
         self.last_cmd = cmd
-        time.sleep(random.randrange(567, 1309) / 1000.0)
+        time.sleep(delay/1000.0)
+        time.sleep(random.randrange(267, 1309) / 1000.0)
         print(cmd)
         self.TECH.send_input(self.pycwnd, cmd)
         # randomly double send
         if random.randrange(1, 15) == 1:
+            print("Oops: "+cmd)
             time.sleep(random.randrange(567, 1209) / 1000.0)
             self.TECH.send_input(self.pycwnd, cmd)
 
-    def send_cmd(self, cmd):
-        cmdThread = threading.Thread(target=self.start_cmd_thread, args=[cmd])
+    def send_cmd(self, cmd, delay =0):
+        cmdThread = threading.Thread(target=self.start_cmd_thread, args=[cmd,delay])
         cmdThread.start()
         cmdThread.join()
 
@@ -167,6 +188,11 @@ class TECSmashed:
                 self.free = False
                 self.add_action(Action.cast_pole)
                 self.send_cmd("cast pole")
+            elif self.current_action == Action.bait_pole:
+                self.free = False
+                self.send_cmd("get worm")
+                time.sleep(random.randrange(334, 700) / 1000)
+                self.send_cmd("bait pole")
             elif self.current_action == Action.repeat:
                 if Action.attack not in self.queue:
                     self.send_cmd(self.last_cmd)
@@ -223,6 +249,8 @@ class TECSmashed:
             self.pickpocketing.handle_pickpocket_line(line)
         elif self.outdoor:
             self.outdoor_basics.handle_outdoor_line(line)
+        elif self.courses:
+            self.courses_mod.handle_courses_line(line)
         # elif self.hunting:
         # self.hunting_lore.handle_hunting_line(line)
         elif "You are no longer busy" in line:
@@ -236,7 +264,7 @@ class TECSmashed:
         elif "p" == line or "o" == line or "m" == line or "spookt" == line or "ect" == line:
             print("Pickpocketing")
             self.palming = True
-        elif "ff" == line or "mt" == line or "sft" == line:
+        elif "ff" == line or "mt" == line or "sft" == line or "fb" == line or "fg" == line:
             print("Outdoor Basics")
             self.outdoor = True
             self.outdoor_basics.handle_outdoor_line(line)
@@ -295,6 +323,10 @@ class TECSmashed:
             self.perform_action()
         elif "cast pole" in line:
             self.add_action(Action.cast_pole)
+        elif "Your pole is already baited." in line:
+            self.perform_action()
+        elif "set the hook" in line:
+            self.add_action(Action.bait_pole)
         elif "sstat" in line:
             print(self.queue)
             print("Free: " + str(self.free))

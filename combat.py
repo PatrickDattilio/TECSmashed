@@ -13,14 +13,14 @@ class combat:
     def __init__(self, tec):
         self.tec = tec
         self.rotation = [['zzh', 'zxh', 'zch', 'zvh', 'zbh', 'znh', 'zmh', 'za', 'zsh'],
-                         ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'za', 'zs', 'zf']]
+                         ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'za', 'zs', 'zd']]##'zf']]
         self.retreat = False
         self.hunting_ground = HuntingGround.Sewers
 
     def recover(self):
-        self.tec.send_cmd("get dag")
+        self.tec.send_cmd("get knife")
         time.sleep(random.randrange(1234, 2512) / 1000)
-        self.tec.send_cmd("wie dag")
+        self.tec.send_cmd("wie knife")
 
     def handle_recover(self, recoverNow):
         self.tec.add_action(Action.recover)

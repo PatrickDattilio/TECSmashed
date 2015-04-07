@@ -17,6 +17,12 @@ class outdoor_basics:
             elif self.action == Action.stoke_fire_twig:
                 self.tec.add_action(Action.stoke_fire_twig)
                 self.handle_stoke_fire_twig()
+            if self.action == Action.find_grass:
+                self.tec.add_action(Action.find_grass)
+                self.handle_find_grass()
+            if self.action == Action.find_berries:
+                self.tec.add_action(Action.find_berries)
+                self.handle_find_berries()
             else:
                 self.tec.perform_action()
 
@@ -32,6 +38,10 @@ class outdoor_basics:
             self.tec.add_action(Action.make_torch)
         elif "sft" == line:
             self.tec.add_action(Action.stoke_fire_twig)
+        elif "fg" == line:
+            self.tec.add_action(Action.find_grass)
+        elif "fb" == line:
+            self.tec.add_action(Action.find_berries)
 
     def handle_find_firewood(self):
         self.tec.send_cmd("ff")
@@ -41,3 +51,9 @@ class outdoor_basics:
 
     def handle_stoke_fire_twig(self):
         self.tec.send_cmd("sft")
+
+    def handle_find_berries(self):
+        self.tec.send_cmd("fb")
+
+    def handle_find_grass(self):
+        self.tec.send_cmd("fg")
