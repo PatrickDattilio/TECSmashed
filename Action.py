@@ -27,6 +27,8 @@ class Action(IntEnum):
     make_torch = 32
     find_grass = 33
     find_berries = 34
+    find_twig = 35
+    make_rope = 36
 
     ##### Pickpocketing aciongs
     palm = 40

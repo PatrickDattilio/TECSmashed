@@ -4,29 +4,27 @@ from Action import Action
 
 
 class pickpocketing:
-    global running
 
     def __init__(self, tec):
         self.tec = tec
         self.free = False
-        self.queue = []
         self.action = Action.nothing
         self.timer = Timer(3.0, self.perform_action())
         self.last_command = ""
         self.palming = False
 
     def add_action(self, action):
-        if action not in self.queue:
-            self.queue.append(action)
-            self.queue.sort()
-            print("QueueA: " + str(self.queue))
+        if action not in self.tec.queue:
+            self.tec.queue.append(action)
+            self.tec.queue.sort()
+            print("QueueA: " + str(self.tec.queue))
 
 
     def remove_action(self, action):
-        if action in self.queue:
-            self.queue.remove(action)
-            self.queue.sort()
-            print("QueueD: " + str(self.queue))
+        if action in self.tec.queue:
+            self.tec.queue.remove(action)
+            self.tec.queue.sort()
+            print("QueueD: " + str(self.tec.queue))
 
     def send_cmd(self, cmd):
         print("Sending: " + cmd)
@@ -85,8 +83,8 @@ class pickpocketing:
             self.add_action(Action.palm)
 
     def perform_action(self):
-        if self.free and len(self.queue) > 0:
-            self.action = self.queue.pop()
+        if self.free and len(self.tec.queue) > 0:
+            self.action = self.tec.queue.pop()
             if self.action == Action.palm:
                 self.free = False
                 self.send_cmd("p")

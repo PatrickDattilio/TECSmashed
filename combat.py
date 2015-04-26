@@ -18,9 +18,9 @@ class combat:
         self.hunting_ground = HuntingGround.Sewers
 
     def recover(self):
-        self.tec.send_cmd("get knife")
+        self.tec.send_cmd("get boi")
         time.sleep(random.randrange(1234, 2512) / 1000)
-        self.tec.send_cmd("wie knife")
+        self.tec.send_cmd("wie boi")
 
     def handle_recover(self, recoverNow):
         self.tec.add_action(Action.recover)
@@ -37,26 +37,26 @@ class combat:
         pass
 
 
-    def retreat(isRetreating):
+    def retreat(self, isRetreating):
         retreat = isRetreating
         pass
 
     def perform_action(self):
         if self.tec.free and len(self.tec.queue) > 0:
-            self.action = self.tec.queue.pop()
-            print("CAction: "+ str(self.action))
-            if self.action == Action.recover:
+            self.tec.action = self.tec.queue.pop()
+            print("CAction: "+ str(self.tec.action))
+            if self.tec.action == Action.recover:
                 self.recover()
-            elif self.action == Action.retreat:
+            elif self.tec.action == Action.retreat:
                 self.tec.free = False
-            elif self.action == Action.kill:
+            elif self.tec.action == Action.kill:
                 self.tec.free = False
                 self.tec.add_action(Action.kill)
                 self.tec.send_cmd("kl")
-            elif self.action == Action.attack:
+            elif self.tec.action == Action.attack:
                 self.tec.free = False
                 self.attack()
-            elif self.action == Action.release:
+            elif self.tec.action == Action.release:
                 self.tec.send_cmd("release")
             else:
                 self.tec.perform_action()
@@ -104,4 +104,4 @@ class combat:
                 self.tec.in_combat = False
             roll = self.tec.rollPattern.search(line)
             if me:
-                self.action_status = int(roll.group(1)) < int(roll.group(2))
+                self.tec.action_status = int(roll.group(1)) < int(roll.group(2))

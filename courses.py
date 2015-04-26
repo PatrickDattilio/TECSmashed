@@ -1,30 +1,48 @@
+from threading import Timer
 from Action import Action
 
 
 class courses:
     def __init__(self, tec):
         self.tec = tec
+        self.timer = Timer(2.0, self.timeout)
+
+    def timeout(self):
+        print("Timeout: "+str(self.tec.action))
+        self.tec.add_action(Action.repeat)
+        self.tec.free = True
+        self.tec.perform_action()
+
+    def go(self):
+        self.tec.free = True
+        self.perform_action()
 
     def perform_action(self):
         if self.tec.free and len(self.tec.queue) > 0:
-            self.action = self.tec.queue.pop()
-            if self.action == Action.stand:
+            self.tec.action = self.tec.queue.pop()
+            if self.tec.action == Action.stand:
                 self.tec.send_cmd("stand")
-            elif self.action == Action.east:
+            elif self.tec.action == Action.east:
                 self.tec.send_cmd("e")
-            elif self.action == Action.south:
+            elif self.tec.action == Action.south:
                 self.tec.send_cmd("s")
-            elif self.action == Action.climb_rope:
+            elif self.tec.action == Action.climb_rope:
                 self.tec.send_cmd("cc", 250)
-            elif self.action == Action.go_plank:
+                self.timer = Timer(4.0, self.timeout)
+                self.timer.start()
+            elif self.tec.action == Action.go_plank:
                 self.tec.send_cmd("cv")
-            elif self.action == Action.go_path:
+                self.timer = Timer(4.0, self.timeout)
+                self.timer.start()
+            elif self.tec.action == Action.go_path:
                 self.tec.send_cmd("cb")
-            elif self.action == Action.jump_rope:
+                self.timer = Timer(3.0, self.timeout)
+                self.timer.start()
+            elif self.tec.action == Action.jump_rope:
                 self.tec.send_cmd("cg", 350)
-            elif self.action == Action.go_track:
+            elif self.tec.action == Action.go_track:
                 self.tec.send_cmd("ch", 350)
-            elif self.action == Action.go_coals:
+            elif self.tec.action == Action.go_coals:
                 self.tec.send_cmd("cj", 350)
 
 
@@ -67,8 +85,5 @@ class courses:
                 self.tec.add_action(Action.south)
             self.go()
 
-            # elif "You start to climb up the rope." in line:
-
-    def go(self):
-        self.tec.free = True
-        self.perform_action()
+        elif "You start to climb up the rope." in line or "You pick a plank and begin to walk over the water." in line or "You run down the path as fast as you can!" in line:
+            self.timer.cancel()
