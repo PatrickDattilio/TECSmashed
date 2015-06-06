@@ -36,16 +36,26 @@ class Action(IntEnum):
     get_den = 42
     spook = 43
     ear = 44
+    move = 45
+    look_for_target = 46
+    look_at_target = 47
+    slice = 48
+    ground_approach = 49
+    empty = 50
+    get_gems = 51
+    fade = 52
+    discard = 53
+    confirm = 54
 
     ###### Combat actions
-    attack = 50
-    combat_skin = 51
-    kill = 52
-    release = 53
-    wield = 54
-    get_weapon = 55
-    retreat = 56
-    recover = 57
+    attack = 60
+    combat_skin = 61
+    kill = 62
+    release = 63
+    wield = 64
+    get_weapon = 65
+    retreat = 66
+    recover = 67
 
     ####Courses
     go_coals = 91

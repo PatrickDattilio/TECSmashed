@@ -13,14 +13,14 @@ class combat:
     def __init__(self, tec):
         self.tec = tec
         self.rotation = [['zzh', 'zxh', 'zch', 'zvh', 'zbh', 'znh', 'zmh', 'za', 'zsh'],
-                         ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'za', 'zs', 'zd']]##'zf']]
+                         ['zz', 'zx', 'zc', 'zv', 'zb', 'zn', 'za', 'zm', 'zs', 'zd', 'zd', 'zm']]##'zf']]
         self.retreat = False
         self.hunting_ground = HuntingGround.Sewers
 
     def recover(self):
-        self.tec.send_cmd("get boi")
+        self.tec.send_cmd("get tin dagg")
         time.sleep(random.randrange(1234, 2512) / 1000)
-        self.tec.send_cmd("wie boi")
+        self.tec.send_cmd("wie tin dagg")
 
     def handle_recover(self, recoverNow):
         self.tec.add_action(Action.recover)
@@ -28,7 +28,7 @@ class combat:
             self.perform_action()
 
     def attack(self):
-        index = random.randrange(0, len(self.rotation[self.hunting_ground]) - 1)
+        index = random.randrange(0, len(self.rotation[self.hunting_ground]))
         cmd = self.rotation[self.hunting_ground][index]
         self.tec.send_cmd(cmd)
         self.tec.add_action(Action.attack)
@@ -70,7 +70,7 @@ class combat:
             self.perform_action()
         elif "expires." in line:
             self.tec.remove_action(Action.kill)
-            self.tec.add_action(Action.combat_skin)
+            #self.tec.add_action(Action.combat_skin)
             print("Dead")
             self.tec.in_combat = False
         elif "falls unconscious" in line:
@@ -100,7 +100,7 @@ class combat:
             elif "You slit" in line:
                 print("Killed")
                 self.tec.remove_action(Action.kill)
-                self.tec.add_action(Action.combat_skin)
+                #self.tec.add_action(Action.combat_skin)
                 self.tec.in_combat = False
             roll = self.tec.rollPattern.search(line)
             if me:

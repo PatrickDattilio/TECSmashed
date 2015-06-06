@@ -32,7 +32,7 @@ class TECSmashed:
         self.free = True
         self.action_status = False
         self.in_combat = False
-        self.palming = False
+        self.pick = False
         self.outdoor = False
         self.paused = False
         self.courses = False
@@ -40,6 +40,7 @@ class TECSmashed:
 
         self.last_direction = "n"
         self.last_cmd = ""
+        self.expected = None
         self.corpse = 1
         self.queue = []
         self.current_action = Action.nothing
@@ -86,25 +87,34 @@ class TECSmashed:
 
     def parse_line(self, file, top):
         line = TECHandler.get_line(file)
-        print(line)
         self.match_line(line)
         top.after(50, self.parse_line, file, top)
 
+    def timeout(self):
+        print("Timeout: " + self.last_cmd)
+        self.add_action(Action.repeat)
+        self.free = True
+        self.perform_action()
 
-    def start_cmd_thread(self, cmd, delay):
+    def start_cmd_thread(self, cmd, delay, expected, oops_allowed):
         self.last_cmd = cmd
         time.sleep(delay / 1000.0)
         time.sleep(random.randrange(267, 1309) / 1000.0)
         print(cmd)
         self.TECH.send_input(self.pycwnd, cmd)
         # randomly double send
-        if random.randrange(1, 15) == 1:
+        if random.randrange(1, 15) == 1 and oops_allowed:
             print("Oops: " + cmd)
             time.sleep(random.randrange(567, 1209) / 1000.0)
             self.TECH.send_input(self.pycwnd, cmd)
+        if expected:
+            self.expected = expected
+            self.timeout_thread = threading.Timer(0.5, self.timeout)
+            self.timeout_thread.start()
 
-    def send_cmd(self, cmd, delay=0):
-        cmdThread = threading.Thread(target=self.start_cmd_thread, args=[cmd, delay])
+
+    def send_cmd(self, cmd, delay=0, expected=None, oops_allowed=True):
+        cmdThread = threading.Thread(target=self.start_cmd_thread, args=[cmd, delay, expected, oops_allowed])
         cmdThread.start()
         cmdThread.join()
 
@@ -242,10 +252,11 @@ class TECSmashed:
 
 
     def match_line(self, line):
-        print(line)
+        if self.expected and self.expected in line:
+            self.timeout_thread.cancel()
         if self.in_combat:
             self.combat.handle_combat_line(line)
-        elif self.palming:
+        elif self.pick:
             self.pickpocketing.handle_pickpocket_line(line)
         elif self.outdoor:
             self.outdoor_basics.handle_outdoor_line(line)
@@ -259,11 +270,11 @@ class TECSmashed:
             self.perform_action()
         elif ( "] A" in line or "] An" in line) and "You retrieve the line" not in line:
             print("Combat")
-            print(line)
             self.in_combat = True
-        elif "p" == line or "o" == line or "m" == line or "spookt" == line or "ect" == line:
+        elif "p" == line or "o" == line or "m" == line or "spookt" == line or "ect" == line or "xx" == line:
             print("Pickpocketing")
-            self.palming = True
+            self.pick = True
+            self.pickpocketing.handle_pickpocket_line(line)
         elif "ff" == line or "mt" == line or "sft" == line or "fb" == line or "fg" == line or "gt" == line or "mr" == line:
             print("Outdoor Basics")
             self.outdoor = True
